@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Story Generator</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="/static/script.js" defer></script>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Header -->
+      <div class="header">
+        <h1 class="title">
+          <span class="sparkle-icon">✨</span>
+          Story Gen
+        </h1>
+        <p class="subtitle">
+          Transform your ideas into captivating stories. Fill in the details
+          below and let AI craft a unique narrative just for you.
+        </p>
+      </div>
+
+      <!-- Main Content -->
+      <div class="main-content">
+        <!-- Form Section -->
+        <div class="form-card">
+          <div class="card-header">
+            <h2 class="card-title">Story Parameters</h2>
+            <p class="card-description">
+              Provide the key elements for your story generation
+            </p>
+          </div>
+          <div class="card-content">
+            <form id="storyForm" class="story-form">
+              <!-- Prompt -->
+              <div class="form-group">
+                <label for="prompt" class="form-label">Prompt</label>
+                <input
+                  type="text"
+                  id="prompt"
+                  class="form-input"
+                  placeholder="e.g., A lost traveler finds a mysterious map..."
+                  required
+                />
+              </div>
+
+              <!-- Genre -->
+              <div class="form-group">
+                <label for="genre" class="form-label">Genre</label>
+                <input
+                  type="text"
+                  id="genre"
+                  class="form-input"
+                  placeholder="e.g., Fantasy, Sci-fi, Mystery, Romance..."
+                  required
+                />
+              </div>
+
+              <!-- Length -->
+              <div class="form-group">
+                <label for="length" class="form-label">Length</label>
+                <input
+                  type="text"
+                  id="length"
+                  class="form-input"
+                  placeholder="e.g., Short story, 500 words, 2-minute read..."
+                  required
+                />
+              </div>
+
+              <!-- Age Group -->
+              <div class="form-group">
+                <label for="ageGroup" class="form-label">Age Group</label>
+                <input
+                  type="text"
+                  id="ageGroup"
+                  class="form-input"
+                  placeholder="e.g., Children, Young Adult, Adults..."
+                  required
+                />
+              </div>
+
+              <!-- Emotion -->
+              <div class="form-group">
+                <label for="emotion" class="form-label">Emotion</label>
+                <input
+                  type="text"
+                  id="emotion"
+                  class="form-input"
+                  placeholder="e.g., Uplifting, Suspenseful, Heartwarming..."
+                  required
+                />
+              </div>
+
+              <!-- Buttons -->
+              <div class="form-actions">
+                <button type="submit" id="generateBtn" class="btn-primary">
+                  <span class="btn-icon">✨</span>
+                  Generate Story
+                </button>
+                <button type="button" id="resetBtn" class="btn-secondary">
+                  <span class="btn-icon">🔄</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Story Display Section -->
+        <div class="story-card">
+          <div class="card-header">
+            <h2 class="card-title">Generated Story</h2>
+            <p class="card-description">
+              Your AI-generated story will appear here
+            </p>
+          </div>
+          <div class="card-content">
+            <div id="storyDisplay" class="story-display">
+              <div class="empty-state">
+                <div class="empty-icon">✨</div>
+                <p>
+                  Fill out the form and click "Generate Story" to see your
+                  AI-crafted narrative
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
