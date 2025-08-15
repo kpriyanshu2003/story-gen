@@ -48,12 +48,13 @@ def ask():
                 500,
             )
 
-        response = requests.post("http://localhost:4000", json={})
-        if response.status_code != 200:
-            return (
-                jsonify({"error": "Failed speech output", "status": "error"}),
-                500,
-            )
+        # TODO : Implement the actual speech output logic
+        # response = requests.post("http://localhost:4000", json={})
+        # if response.status_code != 200:
+        #     return (
+        #         jsonify({"error": "Failed speech output", "status": "error"}),
+        #         500,
+        #     )
 
         response_data = {
             "status": "success",
@@ -66,6 +67,7 @@ def ask():
         return jsonify({"error": str(e), "status": "error"}), 500
 
 
+# TODO : Implement the actual story generation logic
 def generate_story(pre_prompt):
     """Mock function to simulate story generation"""
     # In a real application, this would call an AI model or service
