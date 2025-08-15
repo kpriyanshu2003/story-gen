@@ -255,6 +255,8 @@ body {
   line-height: 1.7;
   font-size: 0.875rem;
   color: #2d2d2d;
+  height: 50vh;
+  overflow-y: auto;
 }
 
 .loading-state {
@@ -310,5 +312,127 @@ body {
   .form-card,
   .story-card {
     padding: 1.5rem;
+  }
+}
+/* Text-to-Speech Controls */
+.tts-controls {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(139, 69, 19, 0.1);
+  flex-wrap: wrap;
+}
+
+.btn-tts {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  background: #8b5cf6;
+  color: white;
+  box-shadow: 4px 4px 8px rgba(139, 69, 19, 0.1),
+    -4px -4px 8px rgba(255, 255, 255, 0.5);
+}
+
+.btn-tts:hover:not(:disabled) {
+  box-shadow: 6px 6px 12px rgba(139, 69, 19, 0.15),
+    -6px -6px 12px rgba(255, 255, 255, 0.7);
+  transform: translateY(-1px);
+}
+
+.btn-tts:active:not(:disabled) {
+  box-shadow: inset 2px 2px 4px rgba(139, 69, 19, 0.1),
+    inset -2px -2px 4px rgba(255, 255, 255, 0.3);
+  transform: translateY(0.5px);
+}
+
+.btn-tts:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-tts span {
+  font-size: 1rem;
+}
+
+/* Speaker button - different color */
+.btn-speaker {
+  background: #059669 !important;
+}
+
+.btn-speaker:hover:not(:disabled) {
+  background: #047857 !important;
+}
+
+/* Loading state for speaker button */
+.btn-speaker.loading {
+  background: #6b7280 !important;
+  cursor: not-allowed;
+}
+
+.btn-speaker.loading span:first-child {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Speaking animation */
+.story-content.speaking {
+  background: linear-gradient(45deg, #e8ddd4, #f0e6d6, #e8ddd4);
+  background-size: 200% 200%;
+  animation: speaking-glow 2s ease-in-out infinite;
+}
+
+.story-content.speaker-playing {
+  background: linear-gradient(45deg, #d1fae5, #e8ddd4, #d1fae5);
+  background-size: 200% 200%;
+  animation: speaker-glow 2s ease-in-out infinite;
+}
+
+@keyframes speaking-glow {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes speaker-glow {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@media (max-width: 768px) {
+  .tts-controls {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .btn-tts {
+    font-size: 0.7rem;
+    padding: 0.4rem 0.8rem;
+    justify-content: center;
   }
 }

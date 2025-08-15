@@ -1,6 +1,15 @@
-from flask import Flask, request, jsonify, send_file
+import os
 import requests
 
+# from openai import OpenAI
+# from dotenv import load_dotenv
+from flask import Flask, request, jsonify, send_file
+
+# load_dotenv()
+# client = OpenAI(
+#     base_url="https://openrouter.ai/api/v1",
+#     api_key=os.getenv("OPENROUTER_API_KEY"),
+# )
 app = Flask(__name__, static_folder="static")
 
 
@@ -69,9 +78,13 @@ def ask():
 
 # TODO : Implement the actual story generation logic
 def generate_story(pre_prompt):
-    """Mock function to simulate story generation"""
-    # In a real application, this would call an AI model or service
-    return f"Generated story based on prompt: {pre_prompt}"
+    """story generation function"""
+    # completion = client.chat.completions.create(
+    #     model="openai/gpt-oss-20b:free",
+    #     messages=[{"role": "user", "content": pre_prompt}],
+    # )
+    # return completion.choices[0].message.content
+    return "hello world"
 
 
 if __name__ == "__main__":

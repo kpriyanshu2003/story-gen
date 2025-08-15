@@ -114,10 +114,35 @@
         <!-- Story Display Section -->
         <div class="story-card">
           <div class="card-header">
-            <h2 class="card-title">Generated Story</h2>
+            <h2 class="card-title">Your Story</h2>
             <p class="card-description">
               Your AI-generated story will appear here
             </p>
+            <!-- Add this new section -->
+            <div class="tts-controls" id="ttsControls" style="display: none">
+              <button type="button" class="btn-tts" id="playBtn">
+                <span>🔊</span> Play Story
+              </button>
+              <button
+                type="button"
+                class="btn-tts"
+                id="pauseBtn"
+                style="display: none"
+              >
+                <span>⏸️</span> Pause
+              </button>
+              <button
+                type="button"
+                class="btn-tts"
+                id="stopBtn"
+                style="display: none"
+              >
+                <span>⏹️</span> Stop
+              </button>
+              <button type="button" class="btn-tts btn-speaker" id="speakerBtn">
+                <span>📢</span> Play on Speaker
+              </button>
+            </div>
           </div>
           <div class="card-content">
             <div id="storyDisplay" class="story-display">

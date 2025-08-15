@@ -7,9 +7,15 @@ class StoryGenerator {
       ageGroup: "",
       emotion: "",
     };
-
     this.isLoading = false;
     this.generatedStory = "";
+
+    // Text-to-speech properties
+    this.speechSynthesis = window.speechSynthesis;
+    this.currentUtterance = null;
+    this.isSpeaking = false;
+    this.isPaused = false;
+    this.isSpeakerPlaying = false;
 
     this.initializeElements();
     this.bindEvents();
@@ -21,6 +27,13 @@ class StoryGenerator {
     this.generateBtn = document.getElementById("generateBtn");
     this.resetBtn = document.getElementById("resetBtn");
     this.storyDisplay = document.getElementById("storyDisplay");
+
+    // TTS elements
+    this.ttsControls = document.getElementById("ttsControls");
+    this.playBtn = document.getElementById("playBtn");
+    this.pauseBtn = document.getElementById("pauseBtn");
+    this.stopBtn = document.getElementById("stopBtn");
+    this.speakerBtn = document.getElementById("speakerBtn");
 
     this.inputs = {
       prompt: document.getElementById("prompt"),
@@ -44,6 +57,19 @@ class StoryGenerator {
         this.handleInputChange(key, e.target.value);
       });
     });
+
+    // TTS event listeners
+    this.playBtn.addEventListener("click", () => this.handlePlayTTS());
+    this.pauseBtn.addEventListener("click", () => this.handlePauseTTS());
+    this.stopBtn.addEventListener("click", () => this.handleStopTTS());
+    this.speakerBtn.addEventListener("click", () => this.handlePlayOnSpeaker());
+
+    // Speech synthesis events
+    if (this.speechSynthesis) {
+      this.speechSynthesis.addEventListener("voiceschanged", () => {
+        this.getAvailableVoices();
+      });
+    }
   }
 
   handleInputChange(field, value) {
@@ -52,7 +78,6 @@ class StoryGenerator {
   }
 
   updateFormValidation() {
-    // Check actual input values instead of formData object
     const isFormValid = Object.values(this.inputs).every(
       (input) => input.value.trim() !== ""
     );
@@ -61,19 +86,23 @@ class StoryGenerator {
 
   async handleSubmit(e) {
     e.preventDefault();
-
     if (this.isLoading) return;
 
     this.setLoadingState(true);
 
     try {
-      // Make API call to Flask backend
+      // Get current form values
+      const currentFormData = {};
+      Object.keys(this.inputs).forEach((key) => {
+        currentFormData[key] = this.inputs[key].value.trim();
+      });
+
       const response = await fetch("/ask", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(this.formData),
+        body: JSON.stringify(currentFormData),
       });
 
       const data = await response.json();
@@ -82,7 +111,6 @@ class StoryGenerator {
         throw new Error(data.error || "Failed to generate story");
       }
 
-      // Display the generated story
       this.displayStory(data.story);
     } catch (error) {
       console.error("Error generating story:", error);
@@ -93,6 +121,10 @@ class StoryGenerator {
   }
 
   handleReset() {
+    // Stop any ongoing speech or speaker playback
+    this.handleStopTTS();
+    this.handleStopSpeaker();
+
     // Reset form data
     this.formData = {
       prompt: "",
@@ -102,16 +134,12 @@ class StoryGenerator {
       emotion: "",
     };
 
-    // Reset form inputs
     Object.keys(this.inputs).forEach((key) => {
       this.inputs[key].value = "";
     });
 
-    // Reset story display
     this.generatedStory = "";
     this.displayEmptyState();
-
-    // Update form validation
     this.updateFormValidation();
   }
 
@@ -120,142 +148,290 @@ class StoryGenerator {
     this.updateFormValidation();
 
     if (loading) {
-      this.generateBtn.innerHTML = `
-        <div class="loading-spinner"></div>
-        Generating...
-      `;
+      this.generateBtn.innerHTML = `<span>⏳</span> Generating...`;
       this.displayLoadingState();
     } else {
-      this.generateBtn.innerHTML = `
-        <span class="btn-icon">✨</span>
-        Generate Story
-      `;
+      this.generateBtn.innerHTML = `<span>✨</span> Generate Story`;
     }
   }
 
   displayEmptyState() {
+    if (this.ttsControls) {
+      this.ttsControls.style.display = "none";
+    }
     this.storyDisplay.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-icon">✨</div>
-        <p>Fill out the form and click "Generate Story" to see your AI-crafted narrative</p>
-      </div>
-    `;
+            <div class="empty-state">
+                <div class="empty-icon">📚</div>
+                <p>Fill out the form and click "Generate Story" to see your AI-crafted narrative</p>
+            </div>
+        `;
   }
 
   displayLoadingState() {
+    if (this.ttsControls) {
+      this.ttsControls.style.display = "none";
+    }
     this.storyDisplay.innerHTML = `
-      <div class="loading-state">
-        <div class="loading-spinner"></div>
-        <p style="color: #6b7280;">Crafting your story...</p>
-      </div>
-    `;
+            <div class="loading-state">
+                <div class="loading-spinner"></div>
+                <p>Crafting your story...</p>
+            </div>
+        `;
   }
 
   displayStory(story) {
     this.generatedStory = story;
-    this.storyDisplay.innerHTML = `
-      <div class="story-content">${story
-        .replace(/\n\n/g, "</p><p>")
-        .replace(/\n/g, "<br>")}</div>
-    `;
-  }
+    const formattedStory = story.replace(/\n/g, "<br>");
 
-  displayError(message) {
     this.storyDisplay.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-icon">⚠️</div>
-        <p style="color: #ef4444;">${message}</p>
-      </div>
-    `;
+            <div class="story-content" id="storyContent">${formattedStory}</div>
+        `;
+
+    // Show TTS controls
+    if (this.ttsControls) {
+      this.ttsControls.style.display = "flex";
+      this.resetTTSControls();
+    }
   }
 
   showErrorAlert(message) {
-    // Create alert overlay
-    const alertOverlay = document.createElement("div");
-    alertOverlay.className = "alert-overlay";
-    alertOverlay.innerHTML = `
-      <div class="alert-box">
-        <div class="alert-icon">⚠️</div>
-        <h3 class="alert-title">Error</h3>
-        <p class="alert-message">${message}</p>
-        <button class="alert-button" onclick="this.parentElement.parentElement.remove()">
-          OK
-        </button>
-      </div>
-    `;
+    if (this.ttsControls) {
+      this.ttsControls.style.display = "none";
+    }
+    this.storyDisplay.innerHTML = `
+            <div class="error-state" style="color: #dc2626; text-align: center; padding: 2rem;">
+                <p><strong>Error:</strong> ${message}</p>
+            </div>
+        `;
+  }
 
-    // Add styles if not already added
-    if (!document.getElementById("alert-styles")) {
-      const alertStyles = document.createElement("style");
-      alertStyles.id = "alert-styles";
-      alertStyles.textContent = `
-        .alert-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background: rgba(0, 0, 0, 0.5);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 1000;
-        }
-        .alert-box {
-          background: #f0e6d6;
-          box-shadow: 8px 8px 16px rgba(139, 69, 19, 0.15), -8px -8px 16px rgba(255, 255, 255, 0.7);
-          border-radius: 16px;
-          padding: 2rem;
-          max-width: 400px;
-          text-align: center;
-        }
-        .alert-icon {
-          font-size: 3rem;
-          margin-bottom: 1rem;
-        }
-        .alert-title {
-          font-family: "Playfair Display", serif;
-          font-size: 1.5rem;
-          font-weight: 600;
-          color: #2d2d2d;
-          margin-bottom: 1rem;
-        }
-        .alert-message {
-          color: #ef4444;
-          margin-bottom: 1.5rem;
-          line-height: 1.5;
-        }
-        .alert-button {
-          background: #d97706;
-          color: white;
-          border: none;
-          border-radius: 12px;
-          padding: 0.75rem 2rem;
-          font-weight: 500;
-          cursor: pointer;
-          box-shadow: 8px 8px 16px rgba(139, 69, 19, 0.15), -8px -8px 16px rgba(255, 255, 255, 0.7);
-          transition: all 0.2s ease;
-        }
-        .alert-button:hover {
-          box-shadow: 12px 12px 24px rgba(139, 69, 19, 0.2), -12px -12px 24px rgba(255, 255, 255, 0.8);
-          transform: translateY(-2px);
-        }
-      `;
-      document.head.appendChild(alertStyles);
+  // Text-to-Speech Methods
+  getAvailableVoices() {
+    return this.speechSynthesis ? this.speechSynthesis.getVoices() : [];
+  }
+
+  handlePlayTTS() {
+    if (!this.generatedStory) return;
+
+    if (this.isPaused && this.currentUtterance) {
+      // Resume paused speech
+      this.speechSynthesis.resume();
+      this.isPaused = false;
+      this.updateTTSControls();
+      return;
     }
 
-    document.body.appendChild(alertOverlay);
+    // Create new utterance
+    this.currentUtterance = new SpeechSynthesisUtterance(this.generatedStory);
 
-    // Auto-close after 5 seconds
-    setTimeout(() => {
-      if (alertOverlay.parentElement) {
-        alertOverlay.remove();
+    // Configure voice settings
+    const voices = this.getAvailableVoices();
+    const englishVoice = voices.find((voice) => voice.lang.includes("en"));
+    if (englishVoice) {
+      this.currentUtterance.voice = englishVoice;
+    }
+
+    this.currentUtterance.rate = 0.9;
+    this.currentUtterance.pitch = 1;
+    this.currentUtterance.volume = 1;
+
+    // Event listeners
+    this.currentUtterance.onstart = () => {
+      this.isSpeaking = true;
+      this.isPaused = false;
+      this.updateTTSControls();
+      this.addSpeakingAnimation();
+    };
+
+    this.currentUtterance.onend = () => {
+      this.isSpeaking = false;
+      this.isPaused = false;
+      this.currentUtterance = null;
+      this.updateTTSControls();
+      this.removeSpeakingAnimation();
+    };
+
+    this.currentUtterance.onerror = (event) => {
+      console.error("Speech synthesis error:", event.error);
+      this.isSpeaking = false;
+      this.isPaused = false;
+      this.currentUtterance = null;
+      this.updateTTSControls();
+      this.removeSpeakingAnimation();
+    };
+
+    // Start speaking
+    this.speechSynthesis.speak(this.currentUtterance);
+  }
+
+  handlePauseTTS() {
+    if (this.isSpeaking && !this.isPaused) {
+      this.speechSynthesis.pause();
+      this.isPaused = true;
+      this.updateTTSControls();
+    }
+  }
+
+  handleStopTTS() {
+    if (this.speechSynthesis) {
+      this.speechSynthesis.cancel();
+    }
+    this.isSpeaking = false;
+    this.isPaused = false;
+    this.currentUtterance = null;
+    this.updateTTSControls();
+    this.removeSpeakingAnimation();
+  }
+
+  // Speaker API Methods
+  async handlePlayOnSpeaker() {
+    if (!this.generatedStory) return;
+
+    if (this.isSpeakerPlaying) {
+      // If already playing, stop it
+      this.handleStopSpeaker();
+      return;
+    }
+
+    this.setSpeakerLoadingState(true);
+
+    try {
+      const response = await fetch("/play-on-speaker", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          text: this.generatedStory,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to play on speaker");
       }
-    }, 5000);
+
+      // Handle successful speaker playback
+      this.isSpeakerPlaying = true;
+      this.addSpeakerAnimation();
+      this.updateSpeakerButton();
+
+      // Optional: You can add a timer to reset the state after the estimated playback time
+      // or implement a separate endpoint to check playback status
+    } catch (error) {
+      console.error("Error playing on speaker:", error);
+      this.showSpeakerError(`Failed to play on speaker: ${error.message}`);
+    } finally {
+      this.setSpeakerLoadingState(false);
+    }
+  }
+
+  handleStopSpeaker() {
+    // Make API call to stop speaker playback
+    fetch("/stop-speaker", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }).catch((error) => {
+      console.error("Error stopping speaker:", error);
+    });
+
+    this.isSpeakerPlaying = false;
+    this.removeSpeakerAnimation();
+    this.updateSpeakerButton();
+  }
+
+  setSpeakerLoadingState(loading) {
+    if (!this.speakerBtn) return;
+
+    if (loading) {
+      this.speakerBtn.classList.add("loading");
+      this.speakerBtn.disabled = true;
+      this.speakerBtn.innerHTML = "<span>⏳</span> Connecting...";
+    } else {
+      this.speakerBtn.classList.remove("loading");
+      this.speakerBtn.disabled = false;
+      this.updateSpeakerButton();
+    }
+  }
+
+  updateSpeakerButton() {
+    if (!this.speakerBtn) return;
+
+    if (this.isSpeakerPlaying) {
+      this.speakerBtn.innerHTML = "<span>⏹️</span> Stop Speaker";
+    } else {
+      this.speakerBtn.innerHTML = "<span>📢</span> Play on Speaker";
+    }
+  }
+
+  showSpeakerError(message) {
+    // You can implement a toast notification or update UI to show the error
+    alert(message); // Simple alert for now, you can enhance this
+  }
+
+  updateTTSControls() {
+    if (!this.playBtn || !this.pauseBtn || !this.stopBtn) return;
+
+    if (this.isSpeaking && !this.isPaused) {
+      this.playBtn.style.display = "none";
+      this.pauseBtn.style.display = "flex";
+      this.stopBtn.style.display = "flex";
+    } else if (this.isPaused) {
+      this.playBtn.innerHTML = "<span>▶️</span> Resume";
+      this.playBtn.style.display = "flex";
+      this.pauseBtn.style.display = "none";
+      this.stopBtn.style.display = "flex";
+    } else {
+      this.playBtn.innerHTML = "<span>🔊</span> Play Story";
+      this.playBtn.style.display = "flex";
+      this.pauseBtn.style.display = "none";
+      this.stopBtn.style.display = "none";
+    }
+  }
+
+  resetTTSControls() {
+    if (!this.playBtn || !this.pauseBtn || !this.stopBtn) return;
+
+    this.playBtn.innerHTML = "<span>🔊</span> Play Story";
+    this.playBtn.style.display = "flex";
+    this.pauseBtn.style.display = "none";
+    this.stopBtn.style.display = "none";
+    this.updateSpeakerButton();
+  }
+
+  addSpeakingAnimation() {
+    const storyContent = document.getElementById("storyContent");
+    if (storyContent) {
+      storyContent.classList.add("speaking");
+    }
+  }
+
+  removeSpeakingAnimation() {
+    const storyContent = document.getElementById("storyContent");
+    if (storyContent) {
+      storyContent.classList.remove("speaking");
+    }
+  }
+
+  addSpeakerAnimation() {
+    const storyContent = document.getElementById("storyContent");
+    if (storyContent) {
+      storyContent.classList.add("speaker-playing");
+    }
+  }
+
+  removeSpeakerAnimation() {
+    const storyContent = document.getElementById("storyContent");
+    if (storyContent) {
+      storyContent.classList.remove("speaker-playing");
+    }
   }
 }
 
-// Initialize the application when DOM is loaded
+// Initialize the application
 document.addEventListener("DOMContentLoaded", () => {
   new StoryGenerator();
 });
